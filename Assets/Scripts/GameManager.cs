@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour {
 
+	public static GameManager instance = null;
+
 	public Camera mainCamera;
 
 	public BoxCollider2D topWall;
@@ -12,6 +14,13 @@ public class GameManager : MonoBehaviour {
 	public BoxCollider2D leftWall;
 
 	void Awake() {
+		if (instance == null) {
+			instance = this;
+		}
+		else if (instance != this) {
+			Destroy(gameObject);
+		}
+
 		mainCamera = Camera.main;
 	}
 
