@@ -16,6 +16,18 @@ public struct Connection {
 		endElement = end;
 		line = l;
 	}
+
+
+}
+
+public class Member {
+	public string elementName;
+	public int times;
+
+	public Member(string name = "", int count = 0) {
+		elementName = name;
+		times = count;
+	}
 }
 
 /// <summary>
@@ -23,65 +35,61 @@ public struct Connection {
 /// </summary>
 public class ConnectionsGroup {
 
-	public struct Member {
-		public string elementName;
-		public int times;
-
-		public Member(string name = "", int count = 0) {
-			elementName = name;
-			times = count;
-		}
-	}
-
-	public List<Connection> conecctionsList;
+	public List<Connection> connectionsList;
 	public int ID { get; private set;}
 
 	public List<Member> memebersList = new List<Member> ();
 
 	public ConnectionsGroup(int index) {
 		ID = index;
-		conecctionsList = new List<Connection> ();
+		connectionsList = new List<Connection> ();
 	}
 
 	public void AddConnection(Element from, Element to, Line line) {
-
+		Connection newConn = new Connection(from, to, line);
 		// TODO: Comprobar que la conecction no existe ya (para que no se dupliquen las lineas
+		if (!connectionsList.Contains (newConn)) {
+			connectionsList.Add (newConn);
 
-		conecctionsList.Add(new Connection(from, to, line));
+			AddElementToMembers (from);
+			AddElementToMembers (to);
 
-		AddElementToMembers (from);
-		AddElementToMembers (to);
+			// TODO: No se si esto es muy necesario mas allá de ser una ayuda visual en el editor
+			GameObject emptyGO = GameObject.Find("Connection_" + ID);
+			if (emptyGO == null)
+				emptyGO = new GameObject ("Connection_" + ID);
+			
+			from.transform.SetParent (emptyGO.transform);
+			to.transform.SetParent (emptyGO.transform);
+			line.name = "Line " + from.name + "-" + to.name;
+			line.transform.SetParent(emptyGO.transform);
 
-		// TODO: No se si esto es muy necesario mas allá de visual en el editor
-		from.transform.SetParent (line.transform);
-		to.transform.SetParent (line.transform);
-		line.name = "Connection_" + ID;
+			Debug.LogFormat ("Nueva conexión: [{0}] - [{1}]", from.name, to.name);
 
-		Debug.LogFormat ("Nueva conexión: [{0}] - [{1}]", from.name, to.name);
-
-		if (memebersList.Count >= 3)
-			CollapseGroup ();
+			if (memebersList.Count >= 3) {
+				CollapseGroup ();
+			}
+		} else {
+			Debug.LogFormat ("<color=orange> La Connection [{0}]-[{1}] ya existe </color>", from.name, to.name);
+		}
 	}
 
 	private void AddElementToMembers ( Element elem) {
-		Member newMember;
-		newMember.elementName = elem.name;
-		newMember.times = 1;
+		Member newMember = new Member(elem.name, 1);
 
-		if (!memebersList.Contains (newMember)) {
+
+
+		if (!memebersList.ContainsMember (newMember)) {
 			memebersList.Add (newMember);
 		} else {
 			int id = -1;
 			id = memebersList.FindIndex (m => m.elementName == elem.name);
 			if (id >= 0) {
-				memebersList [id].times++;
-			} 
+				memebersList [id].times++;			} 
 			else {
-				Debug.Log ("<color=orange> Error WTF 1: El miembro existente no se ha encontrado para sumar ocurrencias </color>");
+				Debug.Log ("<color=magenta> Error WTF 1: El miembro existente no se ha encontrado para sumar ocurrencias </color>");
 			}
-
-		}
-			
+		}			
 	}
 
 	private void CollapseGroup() {
@@ -172,7 +180,7 @@ public class ConnectionsManager : MonoBehaviour {
 				//TODO: comprobar si hemos soltado encima de un elemento que ya pertenece a una Conecction
 				//KeyValuePair<string, string> entry in myDic
 				foreach ( KeyValuePair<int, ConnectionsGroup> cg in connectionsGroupDictionary) {
-					foreach (ConnectionsGroup.Member m in cg.Value.memebersList) {
+					foreach (Member m in cg.Value.memebersList) {
 						if (endElement.name == m.elementName || startElement.name == m.elementName)
 							ConnectionID = cg.Value.ID;
 					}
